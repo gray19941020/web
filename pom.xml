@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.7.3</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.plat</groupId>
+	<artifactId>web</artifactId>
+	<version>8.0.0-SNAPSHOT</version>
+	<name>web</name>
+	<description>Demo project for Spring Boot</description>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+			<version>RELEASE</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+
+	<properties>
+		<java.version>1.8</java.version>
+		<docker.plugin.version>0.32.0</docker.plugin.version>
+		<docker.host>http://192.168.202.130:2375</docker.host>
+		<docker.registry>192.168.202.130:8082</docker.registry>
+		<docker.namespace>fabric8</docker.namespace>
+		<docker.username>admin</docker.username>
+		<docker.password>admin</docker.password>
+	</properties>
+
+
+	<!--指定仓库地址推送地址-->
+	<distributionManagement>
+		<snapshotRepository>
+			<!--此名称要和.m2/settings.xml中设置的ID一致-->
+			<id>nexus-registry</id>
+			<url>http://192.168.202.130:8081/repository/maven-snapshots/</url>
+		</snapshotRepository>
+
+		<repository>
+			<!--此名称要和.m2/settings.xml中设置的ID一致-->
+			<id>nexus-registry</id>
+			<url>http://192.168.202.130:8081/repository/maven-releases/</url>
+		</repository>
+	</distributionManagement>
+
+	<!--指定仓库地址拉取地址-->
+	<repositories>
+		<repository>
+			<id>web-public</id>
+			<name>public</name>
+			<url>http://192.168.202.130:8081/repository/maven-public/</url>
+		</repository>
+
+		<repository>
+			<id>web-snapshots</id>
+			<name>snapshots</name>
+			<url>http://192.168.202.130:8081/repository/maven-snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+	</repositories>
+
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<!-- 发现io.fabric8更好用，就换了一个 -->
+				<!--<configuration>
+					<image>
+						&lt;!&ndash;配置镜像名称&ndash;&gt;
+						<name>${docker.registry}/boot/${project.name}:${project.version}</name>
+						&lt;!&ndash;镜像打包完成后自动推送到镜像仓库&ndash;&gt;
+						<publish>true</publish>
+					</image>
+					<docker>
+						&lt;!&ndash;Docker远程管理地址&ndash;&gt;
+						<host>${docker.host}</host>
+						&lt;!&ndash;不使用TLS访问&ndash;&gt;
+						<tlsVerify>false</tlsVerify>
+						&lt;!&ndash;Docker推送镜像仓库配置&ndash;&gt;
+						<publishRegistry>
+							&lt;!&ndash;推送镜像仓库用户名&ndash;&gt;
+							<username>${docker.username}</username>
+							&lt;!&ndash;推送镜像仓库密码&ndash;&gt;
+							<password>${docker.password}</password>
+							&lt;!&ndash;推送镜像仓库地址&ndash;&gt;
+							<url>${docker.registry}</url>
+						</publishRegistry>
+					</docker>
+				</configuration>
+				<executions>
+					<execution>
+						<id>docker-exec</id>
+						<phase>install</phase>
+						<goals>
+							<goal>build-image</goal>
+						</goals>
+					</execution>
+				</executions>-->
+			</plugin>
+
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>${docker.plugin.version}</version>
+				<configuration>
+					<!-- Docker Remote Api-->
+					<dockerHost>${docker.host}</dockerHost>
+					<!-- Docker 镜像私服-->
+					<registry>${docker.registry}</registry>
+					<!-- 认证信息-->
+					<authConfig>
+						<push>
+							<username>${docker.username}</username>
+							<password>${docker.password}</password>
+						</push>
+					</authConfig>
+					<images>
+						<image>
+							<!-- 镜像名称： 192.168.202.130:8082/fabric8/web:8.0.0-SNAPSHOT-->
+							<name>${docker.registry}/${docker.namespace}/${project.name}:${project.version}</name>
+							<build>
+								<dockerFile>${project.basedir}/Dockerfile</dockerFile>
+							</build>
+						</image>
+						<image>
+							<!-- 镜像名称： 192.168.202.130:8082/fabric8/web:latest-->
+							<name>${docker.registry}/${docker.namespace}/${project.name}</name>
+							<build>
+								<dockerFile>${project.basedir}/Dockerfile</dockerFile>
+							</build>
+						</image>
+					</images>
+				</configuration>
+				<executions>
+					<execution>
+						<id>docker-exec</id>
+						<phase>install</phase>
+						<goals>
+							<goal>build</goal>
+							<goal>push</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

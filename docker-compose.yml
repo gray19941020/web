@@ -1,0 +1,10 @@
+version: '3'
+services:
+  web:
+    build:
+      context: ./
+    ports:
+      - 7666:8080
+    container_name: web
+    hostname: web
+    image: web-local
